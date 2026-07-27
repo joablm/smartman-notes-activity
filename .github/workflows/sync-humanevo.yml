@@ -1,0 +1,70 @@
+name: Sync Humanevo Source
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download deployed Humanevo
+        run: |
+          python - <<'PY'
+          import os, re, urllib.parse, urllib.request, pathlib, time
+          base='https://fabianeferreira-menteclara.pages.dev/'
+          out=pathlib.Path('site')
+          out.mkdir(exist_ok=True)
+          seeds=[
+            'index.html','painel.html','portal-paciente.html','demo-paciente.html','demo-profissional.html',
+            'limpar-cache.html','diagnostico-supabase.html','app.js','cloud.js','boot.js','config.js',
+            'styles.css','sw.js','manifest.webmanifest','favicon.ico','_headers','robots.txt'
+          ]
+          seen=set()
+          queue=list(seeds)
+          def fetch(rel):
+            rel=rel.lstrip('/')
+            if not rel or rel in seen or rel.startswith(('http:','https:','mailto:','data:','blob:','#')):
+              return
+            seen.add(rel)
+            url=urllib.parse.urljoin(base, rel)
+            try:
+              req=urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                data=r.read()
+                ctype=r.headers.get('content-type','')
+                if r.status!=200: return
+              path=out / rel.split('?',1)[0]
+              if path.name=='': path=path/'index.html'
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(data)
+              print('OK', rel, len(data), ctype)
+              if any(x in ctype for x in ['text/html','text/css','javascript','application/json','manifest+json']) or path.suffix in ['.html','.js','.css','.json','.webmanifest']:
+                text=data.decode('utf-8','ignore')
+                refs=re.findall(r'''(?:src|href)=["']([^"']+)|url\((?:["']?)([^)"']+)|["'](\./[^"']+\.(?:js|css|png|jpg|jpeg|svg|ico|webp|woff2?|json|webmanifest))["']''', text, re.I)
+                for tup in refs:
+                  ref=next((x for x in tup if x),None)
+                  if not ref: continue
+                  ref=urllib.parse.urljoin(rel, ref)
+                  p=urllib.parse.urlparse(ref)
+                  if not p.scheme and p.netloc=='':
+                    clean=p.path.lstrip('/')
+                    if clean and clean not in seen: queue.append(clean)
+            except Exception as e:
+              print('MISS', rel, e)
+          while queue:
+            fetch(queue.pop(0))
+          # remove accidental html error pages saved as assets by checking very small HTML-like responses
+          PY
+      - name: Commit synced source
+        run: |
+          git config user.name "OpenAI Build Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add site
+          git commit -m "Sync Humanevo deployed source" || exit 0
+          git push
