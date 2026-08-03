@@ -37,6 +37,7 @@ jobs:
           zip -r ../releases/Humanevo_Premium_Studio_V4_1_0_REDE_CUIDADO_ESCOLA.zip . -x '*.DS_Store' -x '__MACOSX/*'
           cd ..
           sha256sum releases/Humanevo_Premium_Studio_V4_1_0_REDE_CUIDADO_ESCOLA.zip > releases/SHA256_V4_1_0.txt
+          echo "${{ github.run_id }}" > releases/RUN_ID.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Humanevo-V4.1.0
@@ -47,5 +48,5 @@ jobs:
           git config user.name "OpenAI Build Bot"
           git config user.email "actions@users.noreply.github.com"
           git add releases
-          git commit -m "Build Humanevo V4.1.0 package" || true
+          git commit -m "Build Humanevo V4.1.0 package with run ID" || true
           git push
