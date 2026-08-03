@@ -1,0 +1,572 @@
+
+
+===== function renderPatientForm @ 389461 =====
+pen-assessment-record" data-id="${r.id}">Ver resultado</button></div>`;}).join('')}</div>`:emptyState('file','Nenhuma avaliação registrada','Selecione uma avaliação na biblioteca e vincule ao paciente.')}`;
+  }
+
+  function renderPatientEvidences(p) {
+    if(!isClinicalRole()) return emptyState('lock','Conteúdo protegido','Evidências são exclusivas do Administrador e do Psicólogo.');
+    const files=p.evidences||[];
+    return `<div class="evidence-toolbar"><div><h3>Evidências do processo</h3><p>Fotos, PDFs e documentos organizados no cadastro do paciente.</p></div><label class="btn btn-primary">${icon('upload')} Importar evidências<input type="file" data-evidence-patient="${p.id}" accept="image/*,.pdf,.txt,.doc,.docx" multiple hidden></label></div>${files.length?`<div class="evidence-grid">${files.map(f=>`<article class="evidence-card">${f.type?.startsWith('image/')?`<img src="${f.data}" alt="${escapeHtml(f.name)}">`:`<div class="evidence-file-icon">${icon('file',28)}<span>${escapeHtml((f.name.split('.').pop()||'DOC').toUpperCase())}</span></div>`}<div class="evidence-info"><strong>${escapeHtml(f.name)}</strong><small>${formatDate(f.createdAt)} · ${Math.round((f.size||0)/1024)} KB</small></div><div class="evidence-actions"><button class="mini-icon-btn" data-action="download-evidence" data-patient="${p.id}" data-id="${f.id}" title="Baixar">${icon('download')}</button><button class="mini-icon-btn danger-soft" data-action="delete-evidence" data-patient="${p.id}" data-id="${f.id}" title="Excluir">${icon('trash')}</button></div></article>`).join('')}</div>`:emptyState('upload','Nenhuma evidência anexada','Importe fotos ou documentos para organizar o acompanhamento.')}`;
+  }
+
+  function renderPatientCommunication(p) {
+    return `<div class="detail-grid"><section class="info-panel"><h3>Contato</h3><dl class="kv"><dt>E-mail</dt><dd>${escapeHtml(p.email)}</dd><dt>Telefone</dt><dd>${escapeHtml(formatBrazilPhone(p.phone))}</dd><dt>Último contato</dt><dd>${formatDate(p.last)}</dd></dl></section><section class="info-panel message-panel"><h3>Comunicação</h3><p style="color:var(--ink-soft);font-size:.8rem">Envie o acesso, lembretes e orientações por e-mail ou WhatsApp.</p><div class="inline-actions"><button class="btn btn-primary" data-action="open-email" data-id="${p.id}">${icon('mail')} Preparar e-mail</button><button class="btn btn-secondary" data-action="open-whatsapp-patient" data-id="${p.id}">${icon('phone')} Abrir WhatsApp</button></div></section></div>`;
+  }
+
+  function renderPatientForm(patientId) {
+    const p=patientId?patientById(patientId):null;
+    const clinical=isClinicalRole();
+    const personal=`<div class="form-section full">Dados pessoais</div><input type="hidden" name="id" value="${p?.id||''}"><div class="field"><label>Nome completo</label><input name="name" required value="${escapeHtml(p?.name||'')}"></div><div class="field"><label>Data de nascimento</label><input name="birth" type="date" value="${p?.birth||''}"></div><div class="field"><label>E-mail</label><input name="email" type="email" required value="${escapeHtml(p?.email||'')}"></div><div class="field"><label>Telefone</label><input name="phone" data-phone-mask inputmode="tel" maxlength="15" value="${escapeHtml(formatBrazilPhone(p?.phone||''))}" placeholder="(00) 00000-0000"></div>`;
+    const address=`<div class="form-section full">Endereço completo</div><div class="field"><label>CEP</label><input name="addressZip" data-cep-mask inputmode="numeric" maxlength="9" value="${escapeHtml(formatCep(p?.addressZip||''))}" placeholder="00000-000"></div><div class="field"><label>Logradouro</label><input name="addressStreet" value="${escapeHtml(p?.addressStreet||'')}" placeholder="Rua, avenida, travessa..."></div><div class="field"><label>Número</label><input name="addressNumber" value="${escapeHtml(p?.addressNumber||'')}"></div><div class="field"><label>Complemento</label><input name="addressComplement" value="${escapeHtml(p?.addressComplement||'')}"></div><div class="field"><label>Bairro</label><input name="addressNeighborhood" value="${escapeHtml(p?.addressNeighborhood||'')}"></div><div class="field"><label>Cidade</label><input name="addressCity" value="${escapeHtml(p?.addressCity||'')}"></div><div class="field"><label>UF</label><input name="addressState" maxlength="2" value="${escapeHtml(p?.addressState||'')}" placeholder="MT"></div>`;
+    const clinicalFields=clinical?`<div class="form-section full">Informações de acompanhamento</div><div class="field"><label>Status</label><select name="status">${statusOptions(p?.status||'active')}</select></div><div class="field"><label>Nível de atenção</label><select name="risk">${['none','low','moderate','high','critical'].map(r=>`<option value="${r}" ${p?.risk===r?'selected':''}>${riskLabel(r)}</option>`).join('')}</select></div><div class="field full"><label>Demanda principal</label><textarea name="demand">${escapeHtml(p?.demand||'')}</textarea></div><div class="field full"><label>Tags (separadas por vírgula)</label><input name="tags" value="${escapeHtml((p?.tags||[]).join(', '))}"></div><div class="field full"><label>Hipótese/diagnóstico</label><textarea name="diagnosis">${escapeHtml(p?.diagnosis||'')}</textarea></div><div class="field full"><label>Prognóstico</label><textarea name="prognosis">${escapeHtml(p?.prognosis||'')}</textarea></div><div class="field full"><label>Recomendações</label><textarea name="recommendation">${escapeHtml(p?.recommendation||'')}</textarea></div><div class="field full"><label>Encaminhamentos</label><textarea name="referral">${escapeHtml(p?.referral||'')}</textarea></div>`:`<div class="field full"><div class="admin-callout privacy-callout"><strong>Cadastro de acolhimento</strong><p>Este perfil registra somente dados pessoais e de contato. Conteúdo clínico, nível de atenção, diagnóstico, avaliações e prontuário permanecem restritos ao Administrador e ao Psicólogo.</p></div></div>`;
+    const access= !p?.authUserId?`<div class="form-section full">Convite ao Portal do Paciente</div><div class="field full"><label>Após salvar, como deseja enviar o acesso?</label><div class="delivery-choice"><label><input type="radio" name="inviteChannel" value="none" checked><span>Não enviar agora</span></label><label><input type="radio" name="inviteChannel" value="email"><span>${icon('mail',15)} E-mail</span></label><label><input type="radio" name="inviteChannel" value="whatsapp"><span>${icon('phone',15)} WhatsApp</span></label></div><span class="helper">O sistema abrirá o canal escolhido com a mensagem e o link já preenchidos.</span></div>${clinical?`<div class="field full patient-access-box"><label class="toggle-control"><input type="checkbox" name="createPortalAccess"><span><strong>Criar acesso com senha temporária</strong><small>Quando desmarcado, será enviado um link para o próprio paciente criar a senha.</small></span></label><div class="patient-password-grid"><div class="field"><label>Senha provisória</label><input name="portalPassword" type="password" autocomplete="new-password" placeholder="Mínimo de 8 caracteres"></div><div class="field"><label>Confirmar senha</label><input name="portalPasswordConfirm" type="password" autocomplete="new-password" placeholder="Repita a senha"></div><button class="btn btn-secondary" type="button" data-action="generate-patient-password">${icon('key')} Gerar senha forte</button><label class="toggle-control compact-toggle"><input type="checkbox" name="forcePasswordChange" checked><span><strong>Exigir troca no primeiro acesso</strong><small>A senha temporária será substituída pelo paciente.</small></span></label></div></div>`:''}`:'';
+    const body=`<form id="patient-form" class="form-grid">${personal}${address}${clinicalFields}${access}</form>`;
+    modalShell(p?'Editar paciente':'Novo paciente',p?(clinical?'Atualize dados pessoais, acesso e plano clínico.':'Atualize somente os dados pessoais e de contato.'):(clinical?'Cadastre dados, defina o acesso e registre informações de acompanhamento.':'Colete os dados pessoais e escolha o canal para enviar o link de cadastro.'),body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-patient">${icon('check')} Salvar paciente</button>`,'wide');
+  }
+
+  function renderHistoryForm(patientId) {
+    const body=`<form id="history-form" class="form-grid"><input type="hidden" name="patientId" value="${patientId}"><div class="field"><label>Tipo</label><select name="type">${['evolution','recommendation','diagnosis','prognosis','referral','assessment','note'].map(t=>`<option value="${t}">${humanType(t)}</option>`).join('')}</select></div><div class="field"><label>Data</label><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field full"><label>Título</label><input name="title" required></div><div class="field full"><label>Registro</label><textarea name="content" required></textarea></div></form>`;
+    modalShell('Novo registro clínico','Inclua evolução, recomendação, prognóstico ou encaminhamento.',body,`<button class="btn btn-secondary" data-action="back-patient" data-id="${patientId}">Cancelar</button><button class="btn btn-primary" data-action="save-history">${icon('check')} Salvar registro</button>`);
+  }
+
+  function renderEmailModal(patientId) {
+    const p=patientById(patientId); const template=emailTemplates[0];
+    const body=`<form id="email-form" class="form-grid"><input type="hidden" name="patientId" value="${p.id}"><div class="field full"><label>Destinatário</label><input name="to" type="email" value="${escapeHtml(p.email)}"></div><div class="field full"><label>Modelo de mensagem</label><select name="templateId" id="email-template">${emailTemplates.map(t=>`<option value="${t.id}">${t.title}</option>`).join('')}</select></div><div class="field full"><label>Assunto</label><input name="subject" id="email-subject" value="${escapeHtml(template.subject)}"></div><div class="field full"><label>Mensagem</label><textarea name="body" id="email-body" style="min-height:260px">${escapeHtml(template.body(p))}</textarea></div><div class="field full"><span class="helper">Nesta fase, o botão abre o aplicativo de e-mail do dispositivo. A integração de envio automático será conectada posteriormente.</span></div></form>`;
+    modalShell('Comunicação com paciente',`Mensagem para ${escapeHtml(p.name)}`,body,`<button class="btn btn-secondary" data-action="copy-email">${icon('copy')} Copiar</button><button class="btn bt
+
+===== save-patient @ 395155 =====
+olhimento</strong><p>Este perfil registra somente dados pessoais e de contato. Conteúdo clínico, nível de atenção, diagnóstico, avaliações e prontuário permanecem restritos ao Administrador e ao Psicólogo.</p></div></div>`;
+    const access= !p?.authUserId?`<div class="form-section full">Convite ao Portal do Paciente</div><div class="field full"><label>Após salvar, como deseja enviar o acesso?</label><div class="delivery-choice"><label><input type="radio" name="inviteChannel" value="none" checked><span>Não enviar agora</span></label><label><input type="radio" name="inviteChannel" value="email"><span>${icon('mail',15)} E-mail</span></label><label><input type="radio" name="inviteChannel" value="whatsapp"><span>${icon('phone',15)} WhatsApp</span></label></div><span class="helper">O sistema abrirá o canal escolhido com a mensagem e o link já preenchidos.</span></div>${clinical?`<div class="field full patient-access-box"><label class="toggle-control"><input type="checkbox" name="createPortalAccess"><span><strong>Criar acesso com senha temporária</strong><small>Quando desmarcado, será enviado um link para o próprio paciente criar a senha.</small></span></label><div class="patient-password-grid"><div class="field"><label>Senha provisória</label><input name="portalPassword" type="password" autocomplete="new-password" placeholder="Mínimo de 8 caracteres"></div><div class="field"><label>Confirmar senha</label><input name="portalPasswordConfirm" type="password" autocomplete="new-password" placeholder="Repita a senha"></div><button class="btn btn-secondary" type="button" data-action="generate-patient-password">${icon('key')} Gerar senha forte</button><label class="toggle-control compact-toggle"><input type="checkbox" name="forcePasswordChange" checked><span><strong>Exigir troca no primeiro acesso</strong><small>A senha temporária será substituída pelo paciente.</small></span></label></div></div>`:''}`:'';
+    const body=`<form id="patient-form" class="form-grid">${personal}${address}${clinicalFields}${access}</form>`;
+    modalShell(p?'Editar paciente':'Novo paciente',p?(clinical?'Atualize dados pessoais, acesso e plano clínico.':'Atualize somente os dados pessoais e de contato.'):(clinical?'Cadastre dados, defina o acesso e registre informações de acompanhamento.':'Colete os dados pessoais e escolha o canal para enviar o link de cadastro.'),body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-patient">${icon('check')} Salvar paciente</button>`,'wide');
+  }
+
+  function renderHistoryForm(patientId) {
+    const body=`<form id="history-form" class="form-grid"><input type="hidden" name="patientId" value="${patientId}"><div class="field"><label>Tipo</label><select name="type">${['evolution','recommendation','diagnosis','prognosis','referral','assessment','note'].map(t=>`<option value="${t}">${humanType(t)}</option>`).join('')}</select></div><div class="field"><label>Data</label><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field full"><label>Título</label><input name="title" required></div><div class="field full"><label>Registro</label><textarea name="content" required></textarea></div></form>`;
+    modalShell('Novo registro clínico','Inclua evolução, recomendação, prognóstico ou encaminhamento.',body,`<button class="btn btn-secondary" data-action="back-patient" data-id="${patientId}">Cancelar</button><button class="btn btn-primary" data-action="save-history">${icon('check')} Salvar registro</button>`);
+  }
+
+  function renderEmailModal(patientId) {
+    const p=patientById(patientId); const template=emailTemplates[0];
+    const body=`<form id="email-form" class="form-grid"><input type="hidden" name="patientId" value="${p.id}"><div class="field full"><label>Destinatário</label><input name="to" type="email" value="${escapeHtml(p.email)}"></div><div class="field full"><label>Modelo de mensagem</label><select name="templateId" id="email-template">${emailTemplates.map(t=>`<option value="${t.id}">${t.title}</option>`).join('')}</select></div><div class="field full"><label>Assunto</label><input name="subject" id="email-subject" value="${escapeHtml(template.subject)}"></div><div class="field full"><label>Mensagem</label><textarea name="body" id="email-body" style="min-height:260px">${escapeHtml(template.body(p))}</textarea></div><div class="field full"><span class="helper">Nesta fase, o botão abre o aplicativo de e-mail do dispositivo. A integração de envio automático será conectada posteriormente.</span></div></form>`;
+    modalShell('Comunicação com paciente',`Mensagem para ${escapeHtml(p.name)}`,body,`<button class="btn btn-secondary" data-action="copy-email">${icon('copy')} Copiar</button><button class="btn btn-primary" data-action="send-email">${icon('send')} Abrir no e-mail</button>`,'wide');
+  }
+
+  function renderAppointmentModal(appointmentId,patientId,date) {
+    const a=appointmentId?state.appointments.find(x=>x.id===appointmentId):null;
+    const slot=date||state.selectedDate||new Date().toISOString().slice(0,10);
+    const startValue=a?.start||(slot.includes('T')?slot:`${slot}T09:00`);const endValue=a?.end||addMinutes(startValue,a?.duration||50);
+    const selectedType=a?.type||'Consulta';const selectedMode=a?.mode||'Presencial';const selectedStatus=a?.status||'confirmed';
+    const typeOptions=['Consulta','Retorno','Avaliação','Devolutiva','Orientação profissional','Entrevista inicial'];
+    const modeOptions=['Presencial','Online','Híbrida'];
+    const body=`<form id="appointment-form" class="form-grid"><input type="hidden" name="id" value="${a?.id||''}"><div class="field full"><label>Paciente</label><input id="appointment-patient-search" list="patient-options" placeholder="Digite para localizar o paciente" value="${escapeHtml(patientById(a?.patientId||patientId)?.name||'')}" required><input type="hidden" name="patientId" id="appointment-patient-id" value="${a?.patientId||patientId||''}"><datalist id="patient-options">${state.patients.filter(p=>!isRepositoryStatus(p.status)).map(p=>`<option data-id="${p.id}" value="${escapeHtml(p.name)}">${escapeHtml(p.email)}</option>`).join('')}</datalist></div><div class="field"><label>Início</label><input name="start" type="datetime-local" value="${startValue}" required></div><div class="field"><label>Término</label><input name="end" type="datetime-local" value="${endValue}" required></div>${renderAppointmentConditionalSelect('type','Tipo de sessão','type',typeOptions,selectedType)}${renderAppointmentConditionalSelect('mode','Modalidade','mode',modeOptions,selectedMode)}${renderAppointmentConditionalSelect('status','Status','status',appointmentStatuses,selectedStatus)}<div class="field"><label>Lembrete</label><select name="reminder">${[['none','Sem lembrete'],['2h','2 horas antes'],['24h','24 horas antes'],['48h','48 horas antes']].map(([v,l])=>`<option value="${v}" ${(a?.reminder||'24h')===v?'selected':''}>${l}</option>`).join('')}</select></div><div class="field"><label>Profissional responsável</label><input name="professional" value="${escapeHtml(a?.professional||currentProfile().fullName||'Equipe Humanevo')}"></div><div class="field"><label>Local ou link</label><input name="location" value="${escapeHtml(a?.location||'')}" placeholder="Sala, endereço ou link da videochamada"></div><div class="field full"><label>Observações/Notas</label><textarea name="notes" placeholder="Objetivo, orientações prévias ou informações relevantes.">${escapeHtml(a?.notes||'')}</textarea></div><div class="field full"><div class="appointment-portal-note">${icon('user',17)} <span>Ao salvar com o banco central conectado, este agendamento será exibido automaticamente no Portal do Paciente.</span></div></div></form>`;
+    modalShell(a?'Editar agendamento':'Novo agendamento','Defina horários, modalidade, status e informações da sessão.',body,`${a?`<button class="btn btn-danger" data-action="delete-appointment" data-id="${a.id}">${icon('trash')} Excluir</button>`:''}<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-appointment">${icon('check')} Salvar</button>`);
+  }
+
+  function renderBlockPatientModal(patientId) {
+    const p=patientById(patientId); if(!p) return closeModal();
+    const body=`<form id="block-patient-form" class="form-grid"><input type="hidden" name="patientId" value="${p.id}"><div class="field full"><label>Motivo do bloqueio</label><textarea name="reason" required placeholder="Informe por que este paciente será temporariamente bloqueado."></textarea></div><div class="field full"><span class="helper">O paciente será movido para o repositório com status cinza e o motivo ficará registrado no histórico.</span></div></form>`;
+    modalShell('Bloquear paciente',`Restrinja temporariamente o processo de ${escapeHtml(p.name)}.`,body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-danger" data-action="confirm-block-patient">${icon('lock')} Bloquear paciente</button>`);
+  }
+
+  function renderAssignFormModal(patientId) {
+    const p=patientById(patientId); if(!p) return closeModal();
+    const forms=allAssessments().filter(a=>a.status!=='draft');
+    const body=`<form id="assign-form-form" class="form-grid"><input type="hidden" name="patientId" value="${p.id}"><div class="field full"><label>Paciente</label><input value="${escapeHtml(p.name)}" readonly></div><div class="field full"><label>Formulário</label><select name="formId" required><option value="">Selecione um formulário</option>${forms.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.title)} · ${escapeHtml(f.category||'Avaliação')}</option>`).join('')}</select></div><div class="field"><label>Prazo para resposta</label><input name="dueAt" type="datetime-local" value="${new Date(Date.now()+7*86400000).toISOString().slice(0,16)}"></div><div class="field"><label>Canal</label><select name="channel"><option value="portal">Portal do Paciente + notificação</option><option value="portal_link">Portal + copiar link</option></select></div><div class="field full"><label>Orientação ao paciente</label><textarea name="message" placeholder="Ex.: Responda com tranquilidade antes da próxima consulta."></textarea></div><div class="field full"><div class="alert info">O paciente verá uma notificação no acesso inicial e o formulário ficará disponível na lista da área dele.</div></div></form>`;
+ 
+
+===== save-patient @ 454797 =====
+();updateCalendarDetailPanel();}
+    else if(action==='close-appointment-panel'){hideCalendarTooltip();state.calendarDetailAppointmentId='';saveState();updateCalendarDetailPanel();}
+    else if(action==='edit-appointment'){state.modal={type:'appointment',appointmentId:target.dataset.id};renderModal();}
+    else if(action==='delete-appointment')await deleteAppointment(target.dataset.id);
+    else if(action==='open-block-patient'){state.modal={type:'blockPatient',patientId:target.dataset.id};renderModal();}
+    else if(action==='confirm-block-patient')blockPatient();
+    else if(action==='open-archive-patient'){state.modal={type:'archivePatient',patientId:target.dataset.id};renderModal();}
+    else if(action==='archive-patient-confirm'){const form=document.getElementById('archive-patient-form');if(form?.reportValidity()){const d=Object.fromEntries(new FormData(form));archivePatient(d.patientId,d.status,d.note);}}
+    else if(action==='open-assessment'){state.modal={type:'assessment',assessmentId:target.dataset.id,patientId:state.selectedPatientId||null};renderModal();}
+    else if(action==='nav-library-for-patient'){state.modal=null;state.nav='library';state.assessmentSearch='';state.assessmentCategory='Todas';state.selectedPatientId=target.dataset.id;saveState();render();toast('Escolha uma avaliação e vincule ao paciente no formulário.');}
+    else if(action==='assessment-category'){state.assessmentCategory=target.dataset.value;state.assessmentPage=1;saveState();render();}
+    else if(action==='assessment-page'){state.assessmentPage=Number(target.dataset.value)||1;saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
+    else if(action==='library-info'){state.modal={type:'libraryInfo'};renderModal();}
+    else if(action==='open-assessment-reference'){state.modal={type:'assessmentReference',assessmentId:target.dataset.id};renderModal();}
+    else if(action==='save-assessment-reference')saveAssessmentReference(target.dataset.id);
+    else if(action==='remove-assessment-reference')removeAssessmentReference(target.dataset.id,target.dataset.url);
+    else if(action==='patient-detail-tab'){state.patientDetailTab=target.dataset.value;state.modal={type:'patient',patientId:target.dataset.id};renderModal();}
+    else if(action==='open-history-form'){state.modal={type:'historyForm',patientId:target.dataset.id};renderModal();}
+    else if(action==='back-patient'){state.modal={type:'patient',patientId:target.dataset.id};renderModal();}
+    else if(action==='save-patient')await savePatient();
+    else if(action==='save-history')saveHistory();
+    else if(action==='save-appointment')saveAppointment();
+    else if(action==='save-assessment')saveAssessment(target.dataset.id);
+    else if(action==='copy-email')copyEmail();
+    else if(action==='send-email')sendEmail();
+    else if(action==='open-form-builder'){state.modal={type:'formBuilder',draft:createFormDraft()};renderModal();}
+    else if(action==='edit-custom-form'){const f=state.customForms.find(x=>x.id===target.dataset.id);if(f){state.modal={type:'formBuilder',draft:structuredClone(f)};renderModal();}}
+    else if(action==='duplicate-base-form'){const f=assessmentCatalog.find(x=>x.id===target.dataset.id);if(f)duplicateForm(f);}
+    else if(action==='duplicate-custom-form'){const f=state.customForms.find(x=>x.id===target.dataset.id);if(f)duplicateForm(f);}
+    else if(action==='delete-custom-form')deleteCustomForm(target.dataset.id);
+    else if(action==='add-question-type')addQuestion(target.dataset.type);
+    else if(action==='remove-question'){const d=captureFormBuilderDraft();const i=Number(target.dataset.index);d.questions.splice(i,1);state.modal={type:'formBuilder',draft:d};renderModal();}
+    else if(action==='duplicate-question'){const d=captureFormBuilderDraft();const i=Number(target.dataset.index);const q=structuredClone(d.questions[i]);q.id=uid('q');d.questions.splice(i+1,0,q);state.modal={type:'formBuilder',draft:d};renderModal();}
+    else if(action==='move-question'){const d=captureFormBuilderDraft();const i=Number(target.dataset.index),j=i+Number(target.dataset.direction);if(j>=0&&j<d.questions.length){[d.questions[i],d.questions[j]]=[d.questions[j],d.questions[i]];}state.modal={type:'formBuilder',draft:d};renderModal();}
+    else if(action==='save-custom-form')saveCustomForm(target.dataset.stay==='true');
+    else if(action==='unlock-customization'){const form=document.getElementById('customization-access-form');if(form?.reportValidity()){const password=new FormData(form).get('password');if(password==='adm123'){sessionStorage.setItem('humanevo_custom_unlocked','1');state.modal=null;state.nav='customization';state.adminOpenGroup=null;audit('Área administrativa desbloqueada','Segurança','Acesso validado pela senha parametrizada.');saveState();render();toast('Administração liberada.');}else toast('Senha de acesso incorreta.','error');}}
+    else if(action==='export-system-xlsx')await exportSystemWorkbook();
+    else if(action==='trigger-import-system-xlsx')document.getElementById('admin-import-xlsx')?.click();
+    else if(action==='create-cloud-backup')await createCloudBackup();
+    else if(action==='refresh-backup-timeline')await loadBackupTimeline(true);
+    else if(action==='download-cloud-backup')await downloadCloudBackup(target.dataset.id);
+    else if(action==='open-restore-backup'){state.modal={type:'restoreBackup',backupId:target.dataset.id};renderModal();}
+    else if(action==='confirm-restore-backup')await restoreCloudBackup();
+    else if(action==='open-bulk-provision-patients'){if(currentRole()!=='administrator')return toast('Somente o Administrador pode migrar pacientes em lote.','error');state.modal={type:'bulkProvisionPatients'};renderModal();}
+    else if(action==='regenerate-bulk-password'){const field=document.querySelector('#bulk-provision-form [name="fixedPassword"]');if(field){field.value=generateStrongPassword();field.focus();field.select();}}
+    else if(action==='confirm-bulk-provision-patients')await provisionPatientsInBulk();
+    else if(action==='copy-bulk-credentials'){const rows=pendingBulkCredentials.filter(item=>item.success!==false).map(item=>`${item.name} | ${item.email} | ${item.password||'Senha preservada'} | Perfil: Paciente`).join('\n');await copyText(rows,'Credenciais copiadas.');}
+    else if(action==='download-bulk-credentials'){downloadBlob(new Blob([bulkCredentialsCsv()],{type:'text/csv;charset=utf-8'}),`Credenciais_Pacientes_${new Date().toISOString().slice(0,10)}.csv`);}
+    else if(action==='close-bulk-credentials'){pendingBulkCredentials=[];state.modal=null;render();toast('Migração finalizada. As senhas temporárias foram descartadas da memória.');}
+    else if(action==='open-access-profile-form'){pendingProfileAvatarData='';pendingCredentialData=null;state.adminProfileDraftId=null;state.modal={type:'accessProfileForm'};renderModal();}
+    else if(action==='save-access-profile')await saveAccessProfile();
+    else if(action==='test-user-edge-function'){
+      if(!cloudReady()||currentRole()!=='administrator') return toast('Entre como Administrador conectado ao banco central para testar o serviço.','error');
+      try{
+        const result=await cloud.managedUserFunctionHealth();
+        if(result?.ok) toast(`Serviço de cadastro conectado · Cloudflare Worker ${result.version||'ativo'}.`);
+        else toast('O Cloudflare Worker respondeu, mas falta configurar SUPABASE_SECRET_KEY no projeto.','error');
+      }catch(error){
+        if(error?.code==='CLOUDFLARE_ADMIN_API_UNREACHABLE') toast('O serviço administrativo não pôde ser alcançado. Publique o ZIP completo com _worker.js.','error');
+        else if(error?.status===404||error?.code==='CLOUDFLARE_WORKER_NOT_FOUND') toast('O arquivo _worker.js não está ativo no projeto Cloudflare.','error');
+        else if(error?.status===503||error?.data?.code==='WORKER_SECRET_MISSING') toast('Configure SUPABASE_SECRET_KEY nas variáveis do Cloudflare Pages.','error');
+        else toast(String(error?.message||'Falha ao testar o serviço administrativo.'),'error');
+      }
+    }
+    else if(action==='generate-patient-password'){const form=document.getElementById('patient-form');const password=generateStrongPassword();const first=form?.querySelector('[name="portalPassword"]');const confirmField=form?.querySelector('[name="portalPasswordConfirm"]');const toggle=form?.querySelector('[name="createPortalAccess"]');if(first&&confirmField){if(toggle)toggle.checked=true;first.value=password;confirmField.value=password;first.type='text';confirmField.type='text';first.focus();first.select();toast('Senha forte gerada e confirmada automaticamente.');}}
+    else if(action==='copy-patient-invite'){if(pendingPatientInviteData)await copyText(patientInviteMessage(),'Mensagem de acesso copiada.');}
+    else if(action==='open-patient-invite-email'){if(pendingPatientInviteData){const subject='Humanevo | Acesso ao Portal do Paciente';const url=`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(pendingPatientInviteData.email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(patientInviteMessage())}`;window.open(url,'_blank','noopener,noreferrer');}}
+    else if(action==='open-patient-invite-whatsapp'){if(pendingPatientInviteData){const url=whatsappLink(pendingPatientInviteData.phone,patientInviteMessage());if(!url)return toast('Telefone inválido para abrir o WhatsApp.','error');window.open(url,'_blank','noopener,noreferrer');}}
+    else if(action==='close-patient-invite'){pendingPatientInviteData=null;state.modal={type:'patient',patientId:state.selectedPatientId};saveState();render();toast('Convite encerrado. A senha temporária foi descartada da memória.');}
+    else if(action==='open-whatsapp-patient'){const p=patientById(target.dataset.id);if(p){const url=whatsappLink(p.phone,`Olá, ${firstName(p.name)}. Entramos em contato pela equipe Humanevo.`);if(!url)return toast('Telefone inválido para abrir o WhatsApp.','error');window.open(url,'_blank','noopener,noreferrer');}}
+    else if(action==='open-new-chat'){state.modal={type:'newChat'};renderModal();}
+    else if(action==='open-intake-chat'){state.modal={type:'intakeChat'};renderModal();}
+    else if(action==='create-intake-chat')await createIntakeChat();
+    else if(action==='chat-channel-filter'){state.chatChannelFilter=target.dataset.value||'all';state.activeChatThreadId='';saveState();renderPageOnly();const first=(state.chatThreads||[]).map(normalizeChatThread).find(thread=>chatMatchesCha
+
+===== data-action="save-patient" @ 395142 =====
+adastro de acolhimento</strong><p>Este perfil registra somente dados pessoais e de contato. Conteúdo clínico, nível de atenção, diagnóstico, avaliações e prontuário permanecem restritos ao Administrador e ao Psicólogo.</p></div></div>`;
+    const access= !p?.authUserId?`<div class="form-section full">Convite ao Portal do Paciente</div><div class="field full"><label>Após salvar, como deseja enviar o acesso?</label><div class="delivery-choice"><label><input type="radio" name="inviteChannel" value="none" checked><span>Não enviar agora</span></label><label><input type="radio" name="inviteChannel" value="email"><span>${icon('mail',15)} E-mail</span></label><label><input type="radio" name="inviteChannel" value="whatsapp"><span>${icon('phone',15)} WhatsApp</span></label></div><span class="helper">O sistema abrirá o canal escolhido com a mensagem e o link já preenchidos.</span></div>${clinical?`<div class="field full patient-access-box"><label class="toggle-control"><input type="checkbox" name="createPortalAccess"><span><strong>Criar acesso com senha temporária</strong><small>Quando desmarcado, será enviado um link para o próprio paciente criar a senha.</small></span></label><div class="patient-password-grid"><div class="field"><label>Senha provisória</label><input name="portalPassword" type="password" autocomplete="new-password" placeholder="Mínimo de 8 caracteres"></div><div class="field"><label>Confirmar senha</label><input name="portalPasswordConfirm" type="password" autocomplete="new-password" placeholder="Repita a senha"></div><button class="btn btn-secondary" type="button" data-action="generate-patient-password">${icon('key')} Gerar senha forte</button><label class="toggle-control compact-toggle"><input type="checkbox" name="forcePasswordChange" checked><span><strong>Exigir troca no primeiro acesso</strong><small>A senha temporária será substituída pelo paciente.</small></span></label></div></div>`:''}`:'';
+    const body=`<form id="patient-form" class="form-grid">${personal}${address}${clinicalFields}${access}</form>`;
+    modalShell(p?'Editar paciente':'Novo paciente',p?(clinical?'Atualize dados pessoais, acesso e plano clínico.':'Atualize somente os dados pessoais e de contato.'):(clinical?'Cadastre dados, defina o acesso e registre informações de acompanhamento.':'Colete os dados pessoais e escolha o canal para enviar o link de cadastro.'),body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-patient">${icon('check')} Salvar paciente</button>`,'wide');
+  }
+
+  function renderHistoryForm(patientId) {
+    const body=`<form id="history-form" class="form-grid"><input type="hidden" name="patientId" value="${patientId}"><div class="field"><label>Tipo</label><select name="type">${['evolution','recommendation','diagnosis','prognosis','referral','assessment','note'].map(t=>`<option value="${t}">${humanType(t)}</option>`).join('')}</select></div><div class="field"><label>Data</label><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field full"><label>Título</label><input name="title" required></div><div class="field full"><label>Registro</label><textarea name="content" required></textarea></div></form>`;
+    modalShell('Novo registro clínico','Inclua evolução, recomendação, prognóstico ou encaminhamento.',body,`<button class="btn btn-secondary" data-action="back-patient" data-id="${patientId}">Cancelar</button><button class="btn btn-primary" data-action="save-history">${icon('check')} Salvar registro</button>`);
+  }
+
+  function renderEmailModal(patientId) {
+    const p=patientById(patientId); const template=emailTemplates[0];
+    const body=`<form id="email-form" class="form-grid"><input type="hidden" name="patientId" value="${p.id}"><div class="field full"><label>Destinatário</label><input name="to" type="email" value="${escapeHtml(p.email)}"></div><div class="field full"><label>Modelo de mensagem</label><select name="templateId" id="email-template">${emailTemplates.map(t=>`<option value="${t.id}">${t.title}</option>`).join('')}</select></div><div class="field full"><label>Assunto</label><input name="subject" id="email-subject" value="${escapeHtml(template.subject)}"></div><div class="field full"><label>Mensagem</label><textarea name="body" id="email-body" style="min-height:260px">${escapeHtml(template.body(p))}</textarea></div><div class="field full"><span class="helper">Nesta fase, o botão abre o aplicativo de e-mail do dispositivo. A integração de envio automático será conectada posteriormente.</span></div></form>`;
+    modalShell('Comunicação com paciente',`Mensagem para ${escapeHtml(p.name)}`,body,`<button class="btn btn-secondary" data-action="copy-email">${icon('copy')} Copiar</button><button class="btn btn-primary" data-action="send-email">${icon('send')} Abrir no e-mail</button>`,'wide');
+  }
+
+  function renderAppointmentModal(appointmentId,patientId,date) {
+    const a=appointmentId?state.appointments.find(x=>x.id===appointmentId):null;
+    const slot=date||state.selectedDate||new Date().toISOString().slice(0,10);
+    const startValue=a?.start||(slot.includes('T')?slot:`${slot}T09:00`);const endValue=a?.end||addMinutes(startValue,a?.duration||50);
+    const selectedType=a?.type||'Consulta';const selectedMode=a?.mode||'Presencial';const selectedStatus=a?.status||'confirmed';
+    const typeOptions=['Consulta','Retorno','Avaliação','Devolutiva','Orientação profissional','Entrevista inicial'];
+    const modeOptions=['Presencial','Online','Híbrida'];
+    const body=`<form id="appointment-form" class="form-grid"><input type="hidden" name="id" value="${a?.id||''}"><div class="field full"><label>Paciente</label><input id="appointment-patient-search" list="patient-options" placeholder="Digite para localizar o paciente" value="${escapeHtml(patientById(a?.patientId||patientId)?.name||'')}" required><input type="hidden" name="patientId" id="appointment-patient-id" value="${a?.patientId||patientId||''}"><datalist id="patient-options">${state.patients.filter(p=>!isRepositoryStatus(p.status)).map(p=>`<option data-id="${p.id}" value="${escapeHtml(p.name)}">${escapeHtml(p.email)}</option>`).join('')}</datalist></div><div class="field"><label>Início</label><input name="start" type="datetime-local" value="${startValue}" required></div><div class="field"><label>Término</label><input name="end" type="datetime-local" value="${endValue}" required></div>${renderAppointmentConditionalSelect('type','Tipo de sessão','type',typeOptions,selectedType)}${renderAppointmentConditionalSelect('mode','Modalidade','mode',modeOptions,selectedMode)}${renderAppointmentConditionalSelect('status','Status','status',appointmentStatuses,selectedStatus)}<div class="field"><label>Lembrete</label><select name="reminder">${[['none','Sem lembrete'],['2h','2 horas antes'],['24h','24 horas antes'],['48h','48 horas antes']].map(([v,l])=>`<option value="${v}" ${(a?.reminder||'24h')===v?'selected':''}>${l}</option>`).join('')}</select></div><div class="field"><label>Profissional responsável</label><input name="professional" value="${escapeHtml(a?.professional||currentProfile().fullName||'Equipe Humanevo')}"></div><div class="field"><label>Local ou link</label><input name="location" value="${escapeHtml(a?.location||'')}" placeholder="Sala, endereço ou link da videochamada"></div><div class="field full"><label>Observações/Notas</label><textarea name="notes" placeholder="Objetivo, orientações prévias ou informações relevantes.">${escapeHtml(a?.notes||'')}</textarea></div><div class="field full"><div class="appointment-portal-note">${icon('user',17)} <span>Ao salvar com o banco central conectado, este agendamento será exibido automaticamente no Portal do Paciente.</span></div></div></form>`;
+    modalShell(a?'Editar agendamento':'Novo agendamento','Defina horários, modalidade, status e informações da sessão.',body,`${a?`<button class="btn btn-danger" data-action="delete-appointment" data-id="${a.id}">${icon('trash')} Excluir</button>`:''}<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-appointment">${icon('check')} Salvar</button>`);
+  }
+
+  function renderBlockPatientModal(patientId) {
+    const p=patientById(patientId); if(!p) return closeModal();
+    const body=`<form id="block-patient-form" class="form-grid"><input type="hidden" name="patientId" value="${p.id}"><div class="field full"><label>Motivo do bloqueio</label><textarea name="reason" required placeholder="Informe por que este paciente será temporariamente bloqueado."></textarea></div><div class="field full"><span class="helper">O paciente será movido para o repositório com status cinza e o motivo ficará registrado no histórico.</span></div></form>`;
+    modalShell('Bloquear paciente',`Restrinja temporariamente o processo de ${escapeHtml(p.name)}.`,body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-danger" data-action="confirm-block-patient">${icon('lock')} Bloquear paciente</button>`);
+  }
+
+  function renderAssignFormModal(patientId) {
+    const p=patientById(patientId); if(!p) return closeModal();
+    const forms=allAssessments().filter(a=>a.status!=='draft');
+    const body=`<form id="assign-form-form" class="form-grid"><input type="hidden" name="patientId" value="${p.id}"><div class="field full"><label>Paciente</label><input value="${escapeHtml(p.name)}" readonly></div><div class="field full"><label>Formulário</label><select name="formId" required><option value="">Selecione um formulário</option>${forms.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.title)} · ${escapeHtml(f.category||'Avaliação')}</option>`).join('')}</select></div><div class="field"><label>Prazo para resposta</label><input name="dueAt" type="datetime-local" value="${new Date(Date.now()+7*86400000).toISOString().slice(0,16)}"></div><div class="field"><label>Canal</label><select name="channel"><option value="portal">Portal do Paciente + notificação</option><option value="portal_link">Portal + copiar link</option></select></div><div class="field full"><label>Orientação ao paciente</label><textarea name="message" placeholder="Ex.: Responda com tranquilidade antes da próxima consulta."></textarea></div><div class="field full"><div class="alert info">O paciente verá uma notificação no acesso inicial e o formulário ficará disponível na lista da área dele.</div></di
+
+===== function modalShell @ 368595 =====
+div class="empty"><div class="empty-icon">${icon(ic,24)}</div><h3>${title}</h3><p>${text}</p></div>`; }
+
+  function renderModal() {
+    if(!state.modal) { modalRoot.innerHTML=''; return; }
+    const m=state.modal;
+    if(m.type==='patient') return renderPatientDetailModal(m.patientId);
+    if(m.type==='patientForm') return renderPatientForm(m.patientId);
+    if(m.type==='email') return renderEmailModal(m.patientId);
+    if(m.type==='appointment') return renderAppointmentModal(m.appointmentId,m.patientId,m.date);
+    if(m.type==='assessment') return renderAssessmentModal(m.assessmentId,m.patientId);
+    if(m.type==='libraryInfo') return renderInfoModal();
+    if(m.type==='assessmentReference') return renderAssessmentReferenceModal(m.assessmentId);
+    if(m.type==='historyForm') return renderHistoryForm(m.patientId);
+    if(m.type==='formBuilder') return renderFormBuilderModal();
+    if(m.type==='archivePatient') return renderArchivePatientModal(m.patientId);
+    if(m.type==='blockPatient') return renderBlockPatientModal(m.patientId);
+    if(m.type==='customAccess') return renderCustomizationAccessModal();
+    if(m.type==='assignForm') return renderAssignFormModal(m.patientId);
+    if(m.type==='assignmentResponse') return renderAssignmentResponseModal(m.assignmentId);
+    if(m.type==='notifications') return renderNotificationsModal();
+    if(m.type==='cloudLogin') return renderCloudLoginModal();
+    if(m.type==='switchUser') return renderSwitchUserModal(m.email||'');
+    if(m.type==='rollback') return renderRollbackModal(m.logId);
+    if(m.type==='modificationDetail') return renderModificationDetailModal(m.logId);
+    if(m.type==='bulkDeletePatients') return renderBulkDeletePatientsModal(m.patientIds||[]);
+    if(m.type==='accessProfileForm') return renderAccessProfileModal(m.profileId||'');
+    if(m.type==='accessCredentials') return renderAccessCredentialsModal();
+    if(m.type==='patientInvite') return renderPatientInviteModal();
+    if(m.type==='newChat') return renderNewChatModal(m.preselectedUserId||'');
+    if(m.type==='intakeChat') return renderIntakeChatModal();
+    if(m.type==='restoreBackup') return renderRestoreBackupModal(m.backupId);
+    if(m.type==='bulkProvisionPatients') return renderBulkProvisionPatientsModal();
+    if(m.type==='bulkProvisionResult') return renderBulkProvisionResultModal();
+    if(m.type==='clearAllChat') return renderClearAllChatModal();
+    if(m.type==='deletePatient') return renderDeletePatientModal(m.patientId);
+  }
+
+  function modalShell(title,subtitle,body,footer='',wide='') {
+    modalRoot.innerHTML=`<div class="modal-backdrop" data-modal-backdrop="true"><section class="modal ${wide}"><header class="modal-head"><div class="modal-title"><h2>${title}</h2><p>${subtitle||''}</p></div><button class="icon-btn modal-close" data-action="close-modal">${icon('close')}</button></header><div class="modal-body">${body}</div>${footer?`<footer class="modal-footer">${footer}</footer>`:''}</section></div>`;
+    requestAnimationFrame(() => {
+      const passwordField = modalRoot.querySelector('input[type="password"]');
+      const firstField = modalRoot.querySelector('input:not([type="hidden"]), select, textarea');
+      (passwordField || firstField)?.focus();
+    });
+  }
+
+  function renderDeletePatientModal(patientId) {
+    const patient=patientById(patientId); if(!patient) return closeModal();
+    const body=`<div class="bulk-delete-warning"><span>${icon('trash',30)}</span><div><strong>Excluir ${escapeHtml(patient.name)}</strong><p>O cadastro, agendamentos, avaliações, respostas, notificações e evidências vinculadas serão removidos.</p></div></div>${patient.cloudId?`<div class="admin-callout warning-callout"><strong>Registro sincronizado</strong><p>O paciente também será excluído do banco central. A conta de autenticação não será apagada automaticamente.</p></div>`:''}<label class="confirm-danger-check"><input id="delete-patient-ack" type="checkbox"><span><strong>Confirmo a exclusão deste paciente</strong><small>Esta operação não pode ser desfeita pelo aplicativo.</small></span></label>`;
+    modalShell('Excluir paciente','Confirmação administrativa de uma operação permanente.',body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-danger" data-action="confirm-delete-patient" data-id="${patient.id}">${icon('trash')} Excluir paciente</button>`,'wide');
+  }
+
+  async function deleteSinglePatient(patientId) {
+    if(!hasPermission('delete_patients')) return toast('Seu perfil não possui permissão para excluir pacientes.','error');
+    const ack=document.getElementById('delete-patient-ack');
+    if(!ack?.checked) return toast('Confirme a exclusão antes de continuar.','error');
+    const patient=patientById(patientId); if(!patient) return toast('Paciente não localizado.','error');
+    try {
+      if(patient.cloudId){
+        if(!cloudReady()) throw new Error('Conecte-se ao banco central para excluir este paciente sincronizado.');
+        await cloud.deleteSinglePatient(patient.cloudId);
+      }
+      const id=patient.id;
+      state.patients=state.patients.filter(p=>p.id!==id);
+      state.appointments=state.appointments.filter(a=>a.patientId!==id);
+      state.assessmentRecords=state.assessmentRecords.filter(r=>r.patientId!==id);
+      state.formAssignments=(state.formAssignments||[]).filter(a=>a.patientId!==id);
+      state.notifications=(state.notifications||[]).filter(n=>n.patientId!==id);
+      state.selectedPatientIds=(state.selectedPatientIds||[]).filter(value=>value!==id);
+      if(state.selectedPatientId===id) state.selectedPatientId=null;
+      state.modal=null;
+      audit('Paciente excluído','Pacientes',`${patient.name} · exclusão individual`);
+      saveState();render();toast('Paciente excluído com sucesso.');
+    } catch(error){toast(error.message||'Não foi possível excluir o paciente.','error');}
+  }
+
+  function renderBulkDeletePatientsModal(patientIds=[]) {
+    const patients=patientIds.map(patientById).filter(Boolean);
+    if(!patients.length) return closeModal();
+    const cloudCount=patients.filter(p=>p.cloudId).length;
+    const preview=patients.slice(0,8).map(p=>`<li><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.email||'Sem e-mail')}</small></li>`).join('');
+    const remaining=Math.max(0,patients.length-8);
+    const body=`<div class="bulk-delete-warning"><span>${icon('trash',30)}</span><div><strong>Exclusão permanente de ${patients.length} paciente(s)</strong><p>Serão removidos os cadastros clínicos selecionados, agendamentos, respostas, notificações e vínculos relacionados.</p></div></div><ul class="bulk-delete-preview">${preview}${remaining?`<li class="bulk-delete-more">+ ${remaining} paciente(s) adicional(is)</li>`:''}</ul>${cloudCount?`<div class="admin-callout warning-callout"><strong>Sincronização com o banco central</strong><p>${cloudCount} registro(s) também serão excluídos do Supabase. As contas de autenticação dos pacientes não serão apagadas automaticamente.</p></div>`:''}<label class="confirm-danger-check"><input id="bulk-delete-ack" type="checkbox"><span><strong>Confirmo que revisei a seleção</strong><small>Esta ação afeta dados clínicos e deve ser usada somente quando necessário.</small></span></label>`;
+    modalShell('Excluir pacientes selecionados','Revise os registros antes de confirmar a exclusão em massa.',body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-danger" data-action="confirm-bulk-delete-patients">${icon('trash')} Excluir ${patients.length} paciente(s)</button>`,'wide');
+  }
+
+  async function deletePatientsInBulk(patientIds=[]) {
+    if(!hasPermission('delete_patients_bulk')) return toast('Seu perfil não possui permissão para exclusão em massa.','error');
+    const ack=document.getElementById('bulk-delete-ack');
+    if(!ack?.checked) return toast('Confirme que revisou a seleção antes de excluir.','error');
+    const ids=[...new Set(patientIds)].filter(id=>state.patients.some(p=>p.id===id));
+    const patients=ids.map(patientById).filter(Boolean);
+    if(!patients.length) return toast('Nenhum paciente válido foi selecionado.','error');
+    const cloudIds=patients.map(p=>p.cloudId).filter(Boolean);
+    try {
+      if(cloudIds.length) {
+        if(!cloudReady()) throw new Error('Conecte a conta administrativa ao banco central antes de excluir pacientes sincronizados.');
+        await cloud.deletePatients(cloudIds);
+      }
+      const idSet=new Set(ids);
+      state.patients=state.patients.filter(p=>!idSet.has(p.id));
+      state.appointments=state.appointments.filter(a=>!idSet.has(a.patientId));
+      state.assessmentRecords=state.assessmentRecords.filter(r=>!idSet.has(r.patientId));
+      state.formAssignments=(state.formAssignments||[]).filter(a=>!idSet.has(a.patientId));
+      state.notifications=(state.notifications||[]).filter(n=>!idSet.has(n.patientId));
+      if(idSet.has(state.selectedPatientId)) state.selectedPatientId=null;
+      state.selectedPatientIds=[];
+      state.modal=null;
+      audit('Pacientes excluídos em massa','Pacientes',`${patients.length} registro(s): ${patients.map(p=>p.name).join(', ')}`);
+      saveState();
+      render();
+      toast(`${patients.length} paciente(s) excluído(s) com sucesso.`);
+    } catch(error) {
+      toast(error.message||'Não foi possível concluir a exclusão em massa.','error');
+    }
+  }
+
+  function renderSwitchUserModal(email='') {
+    const body=`<form id="switch-user-form" class="form-grid"><div class="field full"><label>E-mail da conta</label><input name="email" type="email" autocomplete="username" required value="${escapeHtml(email)}" placeholder="usuario@exemplo.com"></div><div class="field full"><label>Senha</label><input name="password" type="password" autocomplete="current-password" required placeholder="Digite a senha da conta"></div><div class="field full"><div class="admin-callout"><strong>Troca autenticada</strong><p>A Humanevo encerrará a sessão atual e abrirá o ambiente correspondente ao perfil da nova conta. Nenhuma senha é recuperada ou preenchida pelo aplicativo.</p></div></div></form>`;
+    modalShell('Trocar usuário','Entre com as credenciais da conta que deseja acessar.',body,`<button class="btn btn-secondary" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="confirm-switch-user">${icon('switchUser')} Autenticar e trocar</button>`);
+  }
+
+  async function switchAuthenticatedUser() {
+    const form=document.ge
+
+===== open-patient-form @ 180996 =====
+debar ${state.sidebarOpen?'open':''} ${state.sidebarCollapsed?'collapsed':''}">
+      <div class="brand"><button class="sidebar-home-icon" data-action="home" aria-label="Voltar ao início" title="Voltar ao início">${icon('home',22)}</button><div class="brand-copy"><strong>Início</strong><small>Painel principal</small></div></div>
+      <div class="nav-label">Gestão clínica</div>
+      <nav class="nav">${items.map(([id,ic,label,count])=>`<button class="nav-btn ${state.nav===id?'active':''}" data-action="nav" data-nav="${id}" data-tooltip="${escapeHtml(label)}" aria-label="${escapeHtml(label)}">${icon(ic)}<span class="nav-text">${label}</span>${count!==''?`<span class="count">${count}</span>`:''}</button>`).join('')}</nav>
+      <div class="sidebar-bottom"><div class="daily-verse"><span class="verse-label">Palavra do dia</span><p>“${escapeHtml(verse[1])}”</p><small>${escapeHtml(verse[0])}</small></div></div>
+    </aside>`;
+  }
+  function renderTopbar() {
+    const contextual = state.nav==='forms' && ['administrator','psychologist'].includes(currentRole()) ? `<button class="icon-btn primary-icon" data-action="open-form-builder" title="Criar novo formulário" aria-label="Criar novo formulário">${icon('plus')}</button>` : '';
+    const profile=currentProfile();
+    return `<header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn mobile-menu" data-action="toggle-sidebar" aria-label="Abrir menu" title="Abrir menu">${icon('menu')}</button>
+        <button class="icon-btn desktop-collapse" data-action="toggle-sidebar-collapse" aria-label="${state.sidebarCollapsed?'Expandir menu':'Recolher menu'}" title="${state.sidebarCollapsed?'Expandir menu':'Recolher menu'}">${icon('menu')}</button>
+        <div class="search">${icon('search')}<input id="global-search" placeholder="Buscar paciente, avaliação ou agenda..." value="${escapeHtml(state.patientSearch)}"></div>
+      </div>
+      <div class="topbar-right">
+        ${contextual}
+        <button class="icon-btn notification-button" data-action="open-notifications" title="Notificações" aria-label="Notificações">${icon('bell')}${unreadNotificationCount()?`<span class="notification-count">${unreadNotificationCount()}</span>`:''}</button>
+        ${['administrator','psychologist','intake_manager'].includes(currentRole())?`<button class="icon-btn" data-action="open-appointment" title="Novo agendamento" aria-label="Novo agendamento">${icon('calendar')}</button><button class="icon-btn" data-action="open-patient-form" title="Novo paciente" aria-label="Novo paciente">${icon('plus')}</button>`:''}
+        <span class="topbar-divider"></span>
+        <div class="profile-menu-wrap">
+          <button class="profile-chip profile-chip-button" data-action="toggle-profile-menu" aria-expanded="${state.profileMenuOpen?'true':'false'}" aria-haspopup="menu" title="Abrir opções do perfil">
+            <div class="profile-chip-copy"><strong>${escapeHtml(profile.fullName)}</strong><small>${escapeHtml(profile.roleLabel)}${profile.email?` · ${escapeHtml(profile.email)}`:''}</small></div>
+            ${renderAvatar(profile,'avatar')}<span class="profile-chevron">${icon('chevronDown',15)}</span>
+          </button>
+          ${state.profileMenuOpen?`<div class="profile-dropdown" role="menu"><div class="profile-dropdown-head">${renderAvatar(profile,'profile-dropdown-avatar')}<div><strong>${escapeHtml(profile.fullName)}</strong><small>${escapeHtml(profile.email||'Sessão local')}</small><span>${escapeHtml(profile.roleLabel)}</span></div></div><button data-action="open-switch-user" role="menuitem">${icon('switchUser')}<span><strong>Trocar usuário</strong><small>Autenticar outra conta sem voltar ao início</small></span></button><button data-action="logout-session" class="danger-menu" role="menuitem">${icon('logout')}<span><strong>${isDemoAccess?'Sair do ambiente de teste':'Sair da plataforma'}</strong><small>${isDemoAccess?'Voltar ao portal de acesso':'Encerrar esta sessão com segurança'}</small></span></button></div>`:''}
+        </div>
+      </div>
+    </header>`;
+  }
+
+  function renderPage() {
+    if(!navAllowed(state.nav)) state.nav='dashboard';
+    if(state.nav==='patients') return renderPatientsPage(false);
+    if(state.nav==='repository') return renderPatientsPage(true);
+    if(state.nav==='library') return renderLibraryPage();
+    if(state.nav==='forms') return renderFormStudioPage();
+    if(state.nav==='customization') return renderCustomizationPage();
+    if(state.nav==='modifications') return renderModificationLogsPage();
+    if(state.nav==='calendar') return renderCalendarPage();
+    if(state.nav==='chat') return renderChatPage();
+    if(state.nav==='support') return renderSupportPage();
+    return renderDashboard();
+  }
+  function renderDashboard() {
+    const patients=Array.isArray(state.patients)?state.patients:[];
+    const appointments=Array.isArray(state.appointments)?state.appointments:[];
+    const assessmentRecords=Array.isArray(state.assessmentRecords)?state.assessmentRecords:[];
+    const active=patients.filter(p=>!isRepositoryStatus(p?.status)).length;
+    const today=new Date();
+    const upcoming=appointments.filter(a=>a?.start&&new Date(a.start)>=today&&a.status!=='cancelled').sort((a,b)=>new Date(a.start)-new Date(b.start));
+    const assessmentsThisMonth=assessmentRecords.filter(r=>r?.date&&new Date(r.date).getMonth()===today.getMonth()).length;
+    const alerts=patients.filter(p=>['moderate','high','critical'].includes(p?.risk)).length;
+    const tabs=[['overview','Resumo executivo'],['performance','Desempenho do tratamento'],['insights','Pesquisas e insights']];
+    if(!tabs.some(([id])=>id===state.dashboardTab)) state.dashboardTab='overview';
+    let content='';
+    if(state.dashboardTab==='performance') content=renderTreatmentPerformance();
+    else if(state.dashboardTab==='insights') content=renderResearchInsights();
+    else content=`<section class="stats-grid">
+        ${statCard('users',active,'Pacientes em acompanhamento','Visão atual')}
+        ${statCard('calendar',upcoming.length,'Consultas futuras','Agenda ativa')}
+        ${statCard('file',assessmentsThisMonth,'Avaliações registradas','Mês atual')}
+        ${statCard('activity',alerts,'Pontos de atenção','Revisão profissional')}
+      </section>
+      <section class="dashboard-groups">
+        <details class="dashboard-group" open><summary><span>${icon('calendar')} Agenda e próximos passos</span><small>${upcoming.length} compromissos futuros</small></summary><div class="dashboard-group-body">${renderAgendaList(upcoming.slice(0,6))}</div></details>
+        <details class="dashboard-group" open><summary><span>${icon('activity')} Atividade clínica recente</span><small>Histórico consolidado</small></summary><div class="dashboard-group-body">${renderRecentActivity()}</div></details>
+      </section>`;
+    return `<div class="page-head"><div><h1>Visão geral da clínica</h1><p>Indicadores agrupados para decisões clínicas, acompanhamento e gestão do cuidado.</p></div></div>
+      <div class="dashboard-tabs" role="tablist" aria-label="Indicadores da visão geral">${tabs.map(([id,label])=>`<button type="button" role="tab" aria-selected="${state.dashboardTab===id?'true':'false'}" class="${state.dashboardTab===id?'active':''}" data-action="dashboard-tab" data-value="${id}">${label}</button>`).join('')}</div><div class="dashboard-tab-content" data-dashboard-view="${state.dashboardTab}">${content}</div>`;
+  }
+
+  function statCard(ic,value,label,trend) { return `<article class="stat-card"><div class="stat-top"><span class="stat-icon">${icon(ic)}</span><span class="stat-trend">${trend}</span></div><div><strong>${value}</strong><p>${label}</p></div></article>`; }
+
+  function renderTreatmentPerformance() {
+    const patients=Array.isArray(state.patients)?state.patients:[];
+    const appointments=Array.isArray(state.appointments)?state.appointments:[];
+    const clamp=value=>Math.max(0,Math.min(100,Number.isFinite(Number(value))?Number(value):0));
+    const activeRows=patients
+      .filter(p=>p&&!isRepositoryStatus(p.status))
+      .map(p=>({...p,treatmentProgress:clamp(p.treatmentProgress)}))
+      .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+    const avg=activeRows.length?Math.round(activeRows.reduce((sum,p)=>sum+p.treatmentProgress,0)/activeRows.length):0;
+    const validAppointments=appointments.filter(a=>a&&a.status!=='cancelled');
+    const completed=validAppointments.filter(a=>a.status==='completed').length;
+    const attendance=validAppointments.length?Math.round(completed/validAppointments.length*100):0;
+    const stable=activeRows.filter(p=>['none','low'].includes(p.risk||'none')).length;
+    const rows=activeRows.length?activeRows.map(p=>`<button type="button" class="performance-row" data-action="open-patient" data-id="${escapeHtml(p.id||'')}" aria-label="Abrir acompanhamento de ${escapeHtml(p.name||'Paciente')}">
+        <span class="table-avatar" aria-hidden="true">${initials(p.name||'Paciente')}</span>
+        <span class="performance-name"><strong>${escapeHtml(p.name||'Paciente sem nome')}</strong><small>${escapeHtml(p.demand||'Demanda não informada')}</small></span>
+        <span class="performance-bar" role="progressbar" aria-label="Evolução do tratamento" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p.treatmentProgress}"><i style="width:${p.treatmentProgress}%"></i></span>
+        <b>${p.treatmentProgress}%</b>
+      </button>`).join(''):emptyState('activity','Nenhum paciente em acompanhamento','Cadastre ou reative um paciente para visualizar os indicadores de desempenho.');
+    return `<section class="analytics-grid performance-summary-grid">
+        <article class="analytics-card"><span>Evolução média</span><strong>${avg}%</strong><div class="big-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${avg}"><i style="width:${avg}%"></i></div><small>Média do progresso registrado nos acompanhamentos ativos.</small></article>
+        <article class="analytics-card"><span>Comparecimento</span><strong>${attendance}%</strong><div class="big-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${attendance}"><i style="width:${attendance}%"></i></div><small>Sessões realizadas em relação à agenda válida.</small></article>
+        <article class="analytics-card"><span>Pacientes estáveis</span><strong>${stable}</strong><small>Pacientes ativos sem alerta elevado no acompanhamento atual.</s
+
+===== open-patient-form @ 196346 =====
+ue">${glyph}</b></button></th>`;
+  }
+
+  function visiblePatients(repository=false) {
+    const repo=repository?state.patientRepository:'active';
+    let patients=state.patients.filter(p=>repository?(repo==='all'?isRepositoryStatus(p.status):p.status===repo):!isRepositoryStatus(p.status));
+    const query=state.patientSearch.trim().toLowerCase();
+    if(query) patients=patients.filter(p=>`${p.name} ${p.email} ${p.demand} ${(p.tags||[]).join(' ')}`.toLowerCase().includes(query));
+    return sortPatients(patients);
+  }
+
+  function selectedPatientSet() {
+    return new Set(Array.isArray(state.selectedPatientIds)?state.selectedPatientIds:[]);
+  }
+
+  function renderPatientBulkToolbar(patients) {
+    if(!hasPermission('delete_patients_bulk')) return '';
+    const selected=selectedPatientSet();
+    const visibleIds=patients.map(p=>p.id);
+    const selectedVisible=visibleIds.filter(id=>selected.has(id));
+    const allSelected=visibleIds.length>0&&selectedVisible.length===visibleIds.length;
+    return `<div class="patient-bulk-toolbar ${selectedVisible.length?'has-selection':''}">
+      <label class="bulk-select-control"><input type="checkbox" data-action="toggle-select-all-patients" ${allSelected?'checked':''}><span>${allSelected?'Desmarcar todos':'Selecionar todos desta visão'}</span></label>
+      <div class="patient-bulk-summary"><strong>${selectedVisible.length}</strong><span>paciente(s) selecionado(s)</span></div>
+      <div class="patient-bulk-actions">${selectedVisible.length?`<button class="btn btn-secondary btn-sm" data-action="clear-patient-selection">${icon('close',14)} Limpar seleção</button><button class="btn btn-danger btn-sm" data-action="open-bulk-delete-patients">${icon('trash',14)} Excluir selecionados</button>`:'<span class="bulk-selection-hint">Use os marcadores nos cards ou na lista.</span>'}</div>
+    </div>`;
+  }
+
+  function renderPatientsPage(repository=false) {
+    const repo=repository?state.patientRepository:'active';
+    const patients=visiblePatients(repository);
+    const title=repository?'Repositório clínico':'Pacientes';
+    const subtitle=repository?'Processos encerrados, desistentes, bloqueados ou organizados por status.':'Gerencie o acompanhamento em cards ou lista. Dê duplo clique para abrir o cadastro.';
+    const repositoryStatuses=state.patientStatuses.filter(s=>s.repository);
+    return `<div class="page-head"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="page-actions"><button class="btn btn-primary" data-action="open-patient-form">${icon('plus')} Novo paciente</button></div></div>
+      <div class="toolbar">
+        <div class="filter-chips">${repository?`<button class="chip ${repo==='all'?'active':''}" data-action="repo-filter" data-value="all">Todos</button>${repositoryStatuses.map(s=>`<button class="chip ${repo===s.id?'active':''}" data-action="repo-filter" data-value="${s.id}">${escapeHtml(s.label)}</button>`).join('')}`:`<span class="chip active">Em acompanhamento</span>`}</div>
+        <div class="segmented" aria-label="Modo de visualização"><button class="${state.patientView==='cards'?'active':''}" data-action="patient-view" data-value="cards" title="Cards">${icon('grid')}</button><button class="${state.patientView==='list'?'active':''}" data-action="patient-view" data-value="list" title="Lista">${icon('list')}</button></div>
+      </div>
+      ${renderPatientBulkToolbar(patients)}
+      ${state.patientView==='cards'?renderPatientCards(patients):renderPatientTable(patients)}`;
+  }
+
+  function renderPatientCards(patients) {
+    if(!patients.length) return emptyState('users','Nenhum paciente encontrado','Ajuste os filtros ou cadastre um novo paciente.');
+    const selected=selectedPatientSet();
+    const canSelect=hasPermission('delete_patients_bulk');
+    const clinical=isClinicalRole();
+    return `<section class="patient-grid">${patients.map(p=>`<article class="patient-card status-neon ${selected.has(p.id)?'patient-selected':''}" ${statusInline(p.status)} data-patient-id="${p.id}" tabindex="0">
+      ${canSelect?`<label class="patient-select-flag" title="Selecionar ${escapeHtml(p.name)}"><input type="checkbox" data-action="toggle-patient-selection" data-id="${p.id}" ${selected.has(p.id)?'checked':''}><span>${icon('check',14)}</span></label>`:''}
+      <div class="patient-head"><div class="patient-person"><div class="patient-avatar">${initials(p.name)}</div><div><strong>${escapeHtml(p.name)}</strong><small>${ageFromBirth(p.birth)} anos · ${escapeHtml(formatBrazilPhone(p.phone))}</small></div></div><span class="status-badge" ${statusInline(p.status)}>${cardStatusLabel(p.status)}</span></div>
+      <div class="patient-card-actions" role="group" aria-label="Ações do paciente"><button class="mini-icon-btn" data-action="open-email" data-id="${p.id}" title="Enviar e-mail">${icon('mail')}</button><button class="mini-icon-btn" data-action="open-whatsapp-patient" data-id="${p.id}" title="Abrir WhatsApp">${icon('phone')}</button><button class="mini-icon-btn" data-action="open-appointment" data-patient="${p.id}" title="Agendar">${icon('calendar')}</button>${clinical&&!isRepositoryStatus(p.status)?`<button class="mini-icon-btn" data-action="open-archive-patient" data-id="${p.id}" title="Guardar no repositório">${icon('archive')}</button><button class="mini-icon-btn" data-action="open-block-patient" data-id="${p.id}" title="Bloquear paciente">${icon('lock')}</button>`:''}<button class="mini-icon-btn" data-action="open-patient" data-id="${p.id}" title="Abrir cadastro">${icon('arrow')}</button></div>
+      ${clinical?`<p class="patient-demand">${escapeHtml(p.demand||'Demanda ainda não registrada.')}</p><div class="patient-tags">${(p.tags||[]).map(t=>`<span class="mini-tag">${escapeHtml(t)}</span>`).join('')}</div>`:`<p class="patient-demand intake-contact-summary">${escapeHtml(p.email||'E-mail não informado')}<br>${escapeHtml(formatBrazilPhone(p.phone)||'Telefone não informado')}</p>`}
+      <div class="patient-meta"><div><span>Próxima consulta</span><strong>${p.next?`${formatDate(p.next,{day:'2-digit',month:'short'})} · ${formatTime(p.next)}`:'Não agendada'}</strong>${patientAppointmentCardStatus(p.id)}</div><div><span>${clinical?'Evidências':'Acesso ao portal'}</span><strong>${clinical?`${(p.evidences||[]).length} arquivo(s)`:(p.authUserId?'Ativo':'Pendente')}</strong></div></div>
+    </article>`).join('')}</section>`;
+  }
+
+  function renderPatientTable(patients) {
+    if(!patients.length) return emptyState('users','Nenhum paciente encontrado','Ajuste os filtros ou cadastre um novo paciente.');
+    const selected=selectedPatientSet();
+    const canSelect=hasPermission('delete_patients_bulk');
+    const clinical=isClinicalRole();
+    const allSelected=patients.length>0&&patients.every(p=>selected.has(p.id));
+    const headers=`${canSelect?`<th class="selection-column"><label class="table-select-flag" title="Selecionar todos"><input type="checkbox" data-action="toggle-select-all-patients" ${allSelected?'checked':''}><span>${icon('check',13)}</span></label></th>`:''}${renderSortablePatientHeader('name','Paciente')}${renderSortablePatientHeader('status','Status')}${renderSortablePatientHeader('demand',clinical?'Demanda':'Contato')}${renderSortablePatientHeader('next','Próxima consulta')}${renderSortablePatientHeader('evidence',clinical?'Evidências':'Portal')}<th class="actions-column">Ações</th>`;
+    return `<div class="card table-wrap patient-table-shell"><table class="data-table patient-selection-table"><thead><tr>${headers}</tr></thead><tbody>${patients.map(p=>`<tr data-patient-id="${p.id}" class="status-row ${selected.has(p.id)?'patient-selected-row':''}" ${statusInline(p.status)}>${canSelect?`<td class="selection-column"><label class="table-select-flag" title="Selecionar ${escapeHtml(p.name)}"><input type="checkbox" data-action="toggle-patient-selection" data-id="${p.id}" ${selected.has(p.id)?'checked':''}><span>${icon('check',13)}</span></label></td>`:''}<td><div class="table-patient"><span class="table-avatar">${initials(p.name)}</span><div><strong>${escapeHtml(p.name)}</strong><small style="display:block;color:var(--ink-faint)">${escapeHtml(p.email)}</small></div></div></td><td><span class="status-badge" ${statusInline(p.status)}>${statusLabel(p.status)}</span></td><td>${clinical?escapeHtml(p.demand||'—'):`${escapeHtml(formatBrazilPhone(p.phone)||'—')}`}</td><td>${p.next?`${formatDate(p.next,{day:'2-digit',month:'short'})} · ${formatTime(p.next)}`:'—'}</td><td>${clinical?(p.evidences||[]).length:(p.authUserId?'Ativo':'Pendente')}</td><td><div class="table-row-actions">${clinical&&!isRepositoryStatus(p.status)?`<button class="mini-icon-btn" data-action="open-block-patient" data-id="${p.id}" title="Bloquear">${icon('lock')}</button>`:''}<button class="mini-icon-btn" data-action="open-patient" data-id="${p.id}" title="Abrir">${icon('arrow')}</button></div></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function renderLibraryPage() {
+    const categories=['Todas',...new Set(allAssessments().map(a=>a.category))];
+    const query=state.assessmentSearch.toLowerCase().trim();
+    const rows=allAssessments().filter(a=>(state.assessmentCategory==='Todas'||a.category===state.assessmentCategory)&&(!query||`${a.title} ${a.category} ${a.description} ${(a.references||[]).join(' ')}`.toLowerCase().includes(query)));
+    const pageSize=18;
+    const pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
+    state.assessmentPage=Math.min(Math.max(1,state.assessmentPage||1),pageCount);
+    const visible=rows.slice((state.assessmentPage-1)*pageSize,state.assessmentPage*pageSize);
+    return `<div class="page-head"><div><h1>Biblioteca de avaliações</h1><p>Catálogo amplo de processos avaliativos, formulários profissionais e modelos customizados pela equipe.</p></div><div class="page-actions"><button class="btn btn-secondary" data-action="library-info">${icon('book')} Governança</button><button class="btn btn-secondary" data-action="nav" data-nav="forms">${icon('form')} Gerenciar formulários</button></div></div>
+      <div class="toolbar"><div class="filter-chips">${categories.map(c=>`<button class="chip ${state.assessmentCategory===c?'active':''}" data-action="assessment-category" data-value="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('')}</div><div class="search" style="width:min(360px,100%)">${icon('search')}<input id="assessment-search" placeholder="Buscar avaliação ou referência..." value="${escapeHtml(state.assessmentSearch)}"></div></div>
+      <div class="re
+
+===== open-patient-form @ 451457 =====
+es(nextTab)?nextTab:'overview';saveState();renderPageOnly();window.scrollTo({top:0,behavior:'smooth'});}
+    else if(action==='agenda-view'){state.agendaView=target.dataset.value;if(state.agendaView==='three'){state.selectedDate=localIsoDate();state.calendarCursor=`${state.selectedDate.slice(0,7)}-01`;}state.calendarDetailAppointmentId='';hideCalendarTooltip();saveState();render();}
+    else if(action==='patient-view'){state.patientView=target.dataset.value;saveState();render();}
+    else if(action==='patient-sort'){const key=target.dataset.sortKey||'name';const current=state.patientSort||{};state.patientSort={key,direction:current.key===key&&current.direction==='asc'?'desc':'asc'};saveState();renderPageOnly();}
+    else if(action==='repo-filter'){state.patientRepository=target.dataset.value;state.selectedPatientIds=[];saveState();render();}
+    else if(action==='toggle-patient-selection'){const id=target.dataset.id;const selected=selectedPatientSet();target.checked?selected.add(id):selected.delete(id);state.selectedPatientIds=[...selected];render();}
+    else if(action==='toggle-select-all-patients'){const repository=state.nav==='repository';const visible=visiblePatients(repository);const selected=selectedPatientSet();const shouldSelect=!!target.checked;visible.forEach(p=>shouldSelect?selected.add(p.id):selected.delete(p.id));state.selectedPatientIds=[...selected];render();}
+    else if(action==='clear-patient-selection'){state.selectedPatientIds=[];render();}
+    else if(action==='open-delete-patient'){if(!hasPermission('delete_patients'))return toast('Seu perfil não possui permissão para excluir pacientes.','error');state.modal={type:'deletePatient',patientId:target.dataset.id};renderModal();}
+    else if(action==='confirm-delete-patient')await deleteSinglePatient(target.dataset.id);
+    else if(action==='open-bulk-delete-patients'){const ids=[...(state.selectedPatientIds||[])].filter(id=>state.patients.some(p=>p.id===id));if(!ids.length)return toast('Selecione pelo menos um paciente.','error');state.modal={type:'bulkDeletePatients',patientIds:ids};renderModal();}
+    else if(action==='confirm-bulk-delete-patients')await deletePatientsInBulk(state.modal?.patientIds||[]);
+    else if(action==='open-patient'){const p=patientById(target.dataset.id);audit('Prontuário visualizado','Pacientes',p?.name||target.dataset.id);saveState();state.patientDetailTab='summary';state.modal={type:'patient',patientId:target.dataset.id};renderModal();}
+    else if(action==='open-patient-form'){state.modal={type:'patientForm',patientId:target.dataset.id||null};renderModal();}
+    else if(action==='edit-patient'){state.modal={type:'patientForm',patientId:target.dataset.id};renderModal();}
+    else if(action==='open-email'){state.modal={type:'email',patientId:target.dataset.id};renderModal();}
+    else if(action==='open-appointment'){state.modal={type:'appointment',patientId:target.dataset.patient||null,date:target.dataset.date||null};renderModal();}
+    else if(action==='open-appointment-panel'){e.preventDefault();e.stopPropagation();hideCalendarTooltip();state.calendarDetailAppointmentId=target.dataset.appointmentId||'';const appointment=state.appointments.find(item=>String(item.id)===String(state.calendarDetailAppointmentId));if(appointment)state.selectedDate=appointment.start.slice(0,10);saveState();updateCalendarDetailPanel();}
+    else if(action==='close-appointment-panel'){hideCalendarTooltip();state.calendarDetailAppointmentId='';saveState();updateCalendarDetailPanel();}
+    else if(action==='edit-appointment'){state.modal={type:'appointment',appointmentId:target.dataset.id};renderModal();}
+    else if(action==='delete-appointment')await deleteAppointment(target.dataset.id);
+    else if(action==='open-block-patient'){state.modal={type:'blockPatient',patientId:target.dataset.id};renderModal();}
+    else if(action==='confirm-block-patient')blockPatient();
+    else if(action==='open-archive-patient'){state.modal={type:'archivePatient',patientId:target.dataset.id};renderModal();}
+    else if(action==='archive-patient-confirm'){const form=document.getElementById('archive-patient-form');if(form?.reportValidity()){const d=Object.fromEntries(new FormData(form));archivePatient(d.patientId,d.status,d.note);}}
+    else if(action==='open-assessment'){state.modal={type:'assessment',assessmentId:target.dataset.id,patientId:state.selectedPatientId||null};renderModal();}
+    else if(action==='nav-library-for-patient'){state.modal=null;state.nav='library';state.assessmentSearch='';state.assessmentCategory='Todas';state.selectedPatientId=target.dataset.id;saveState();render();toast('Escolha uma avaliação e vincule ao paciente no formulário.');}
+    else if(action==='assessment-category'){state.assessmentCategory=target.dataset.value;state.assessmentPage=1;saveState();render();}
+    else if(action==='assessment-page'){state.assessmentPage=Number(target.dataset.value)||1;saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
+    else if(action==='library-info'){state.modal={type:'libraryInfo'};renderModal();}
+    else if(action==='open-assessment-reference'){state.modal={type:'assessmentReference',assessmentId:target.dataset.id};renderModal();}
+    else if(action==='save-assessment-reference')saveAssessmentReference(target.dataset.id);
+    else if(action==='remove-assessment-reference')removeAssessmentReference(target.dataset.id,target.dataset.url);
+    else if(action==='patient-detail-tab'){state.patientDetailTab=target.dataset.value;state.modal={type:'patient',patientId:target.dataset.id};renderModal();}
+    else if(action==='open-history-form'){state.modal={type:'historyForm',patientId:target.dataset.id};renderModal();}
+    else if(action==='back-patient'){state.modal={type:'patient',patientId:target.dataset.id};renderModal();}
+    else if(action==='save-patient')await savePatient();
+    else if(action==='save-history')saveHistory();
+    else if(action==='save-appointment')saveAppointment();
+    else if(action==='save-assessment')saveAssessment(target.dataset.id);
+    else if(action==='copy-email')copyEmail();
+    else if(action==='send-email')sendEmail();
+    else if(action==='open-form-builder'){state.modal={type:'formBuilder',draft:createFormDraft()};renderModal();}
+    else if(action==='edit-custom-form'){const f=state.customForms.find(x=>x.id===target.dataset.id);if(f){state.modal={type:'formBuilder',draft:structuredClone(f)};renderModal();}}
+    else if(action==='duplicate-base-form'){const f=assessmentCatalog.find(x=>x.id===target.dataset.id);if(f)duplicateForm(f);}
+    else if(action==='duplicate-custom-form'){const f=state.customForms.find(x=>x.id===target.dataset.id);if(f)duplicateForm(f);}
+    else if(action==='delete-custom-form')deleteCustomForm(target.dataset.id);
+    else if(action==='add-question-type')addQuestion(target.dataset.type);
+    else if(action==='remove-question'){const d=captureFormBuilderDraft();const i=Number(target.dataset.index);d.questions.splice(i,1);state.modal={type:'formBuilder',draft:d};renderModal();}
+    else if(action==='duplicate-question'){const d=captureFormBuilderDraft();const i=Number(target.dataset.index);const q=structuredClone(d.questions[i]);q.id=uid('q');d.questions.splice(i+1,0,q);state.modal={type:'formBuilder',draft:d};renderModal();}
+    else if(action==='move-question'){const d=captureFormBuilderDraft();const i=Number(target.dataset.index),j=i+Number(target.dataset.direction);if(j>=0&&j<d.questions.length){[d.questions[i],d.questions[j]]=[d.questions[j],d.questions[i]];}state.modal={type:'formBuilder',draft:d};renderModal();}
+    else if(action==='save-custom-form')saveCustomForm(target.dataset.stay==='true');
+    else if(action==='unlock-customization'){const form=document.getElementById('customization-access-form');if(form?.reportValidity()){const password=new FormData(form).get('password');if(password==='adm123'){sessionStorage.setItem('humanevo_custom_unlocked','1');state.modal=null;state.nav='customization';state.adminOpenGroup=null;audit('Área administrativa desbloqueada','Segurança','Acesso validado pela senha parametrizada.');saveState();render();toast('Administração liberada.');}else toast('Senha de acesso incorreta.','error');}}
+    else if(action==='export-system-xlsx')await exportSystemWorkbook();
+    else if(action==='trigger-import-system-xlsx')document.getElementById('admin-import-xlsx')?.click();
+    else if(action==='create-cloud-backup')await createCloudBackup();
+    else if(action==='refresh-backup-timeline')await loadBackupTimeline(true);
+    else if(action==='download-cloud-backup')await downloadCloudBackup(target.dataset.id);
+    else if(action==='open-restore-backup'){state.modal={type:'restoreBackup',backupId:target.dataset.id};renderModal();}
+    else if(action==='confirm-restore-backup')await restoreCloudBackup();
+    else if(action==='open-bulk-provision-patients'){if(currentRole()!=='administrator')return toast('Somente o Administrador pode migrar pacientes em lote.','error');state.modal={type:'bulkProvisionPatients'};renderModal();}
+    else if(action==='regenerate-bulk-password'){const field=document.querySelector('#bulk-provision-form [name="fixedPassword"]');if(field){field.value=generateStrongPassword();field.focus();field.select();}}
+    else if(action==='confirm-bulk-provision-patients')await provisionPatientsInBulk();
+    else if(action==='copy-bulk-credentials'){const rows=pendingBulkCredentials.filter(item=>item.success!==false).map(item=>`${item.name} | ${item.email} | ${item.password||'Senha preservada'} | Perfil: Paciente`).join('\n');await copyText(rows,'Credenciais copiadas.');}
+    else if(action==='download-bulk-credentials'){downloadBlob(new Blob([bulkCredentialsCsv()],{type:'text/csv;charset=utf-8'}),`Credenciais_Pacientes_${new Date().toISOString().slice(0,10)}.csv`);}
+    else if(action==='close-bulk-credentials'){pendingBulkCredentials=[];state.modal=null;render();toast('Migração finalizada. As senhas temporárias foram descartadas da memória.');}
+    else if(action==='open-access-profile-form'){pendingProfileAvatarData='';pendingCredentialData=null;state.adminProfileDraftId=null;state.modal={type:'accessProfileForm'};renderModal();}
+    else if(action==='save-access-profile')await saveAccessProfile();
+    else if(action==='test-user-edge-function'){
+      if(!cloudReady()||currentRole()!=='administrator') return toast('Entre como Administrador conectado ao banco central para testar o serviço.','error');
+      try{
