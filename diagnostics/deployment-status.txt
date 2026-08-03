@@ -1,0 +1,9 @@
+checked_at=2026-08-03T12:45:36Z
+painel.html http=404 size=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+care-network.js http=404 size=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+care-network.css http=404 size=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+sw.js http=404 size=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+panel_has_v410=0
+panel_has_care_css=0
+care_version=
+sw_cache=
