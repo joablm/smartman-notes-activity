@@ -1,0 +1,39 @@
+name: Check Humanevo Deployment
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.title, 'Check Humanevo Deploy')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect deployed files
+        run: |
+          mkdir -p diagnostics
+          BASE='https://fabianeferreira-menteclara.pages.dev'
+          {
+            echo "checked_at=$(date -u +%FT%TZ)"
+            for f in painel.html care-network.js care-network.css sw.js; do
+              code=$(curl -L -sS -o "/tmp/$f" -w '%{http_code}' "$BASE/$f" || true)
+              size=$(wc -c < "/tmp/$f" 2>/dev/null || echo 0)
+              echo "$f http=$code size=$size sha256=$(sha256sum "/tmp/$f" 2>/dev/null | cut -d' ' -f1)"
+            done
+            echo "panel_has_v410=$(grep -c 'care-network.js?v=4.1.0' /tmp/painel.html || true)"
+            echo "panel_has_care_css=$(grep -c 'care-network.css?v=4.1.0' /tmp/painel.html || true)"
+            echo "care_version=$(grep -o "VERSION='[^']*'" /tmp/care-network.js | head -1 || true)"
+            echo "sw_cache=$(grep -o "humanevo-premium-studio-v[^']*" /tmp/sw.js | head -1 || true)"
+          } > diagnostics/deployment-status.txt
+      - name: Commit diagnostic
+        run: |
+          git config user.name "OpenAI Build Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add diagnostics/deployment-status.txt
+          git commit -m "Check Humanevo production deployment" || true
+          git push
