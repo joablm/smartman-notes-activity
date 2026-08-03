@@ -1,56 +1,14 @@
-name: Build Humanevo
+name: Build Humanevo Source Snapshot
 
 on:
-  issues:
-    types: [opened]
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download deployed Humanevo
-        run: |
-          rm -rf site
-          mkdir -p site
-          python - <<'PY'
-          import re, urllib.parse, urllib.request, pathlib
-          base='https://fabianeferreira-menteclara.pages.dev/'
-          out=pathlib.Path('site')
-          seeds=['index.html','painel.html','portal-paciente.html','demo-paciente.html','demo-profissional.html','limpar-cache.html','diagnostico-supabase.html','app.js','cloud.js','boot.js','config.js','styles.css','sw.js','manifest.webmanifest','favicon.ico','_headers','robots.txt']
-          seen=set(); queue=list(seeds)
-          def fetch(rel):
-            rel=rel.split('#',1)[0].split('?',1)[0].lstrip('/')
-            if not rel or rel in seen or '..' in rel: return
-            seen.add(rel)
-            try:
-              req=urllib.request.Request(urllib.parse.urljoin(base,rel),headers={'User-Agent':'Mozilla/5.0'})
-              with urllib.request.urlopen(req,timeout=30) as r:
-                if r.status!=200: return
-                data=r.read(); ctype=r.headers.get('content-type','')
-              p=out/rel; p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(data)
-              print('OK',rel,len(data),ctype)
-              if p.suffix.lower() in {'.html','.js','.css','.json','.webmanifest'}:
-                text=data.decode('utf-8','ignore')
-                pats=[r'(?:src|href)=["\']([^"\']+)',r'url\(["\']?([^\)"\']+)',r'["\'](\./[^"\']+\.(?:js|css|png|jpg|jpeg|svg|ico|webp|woff2?|json|webmanifest))["\']']
-                for pat in pats:
-                  for ref in re.findall(pat,text,re.I):
-                    u=urllib.parse.urljoin(rel,ref); parsed=urllib.parse.urlparse(u)
-                    if not parsed.scheme and not parsed.netloc:
-                      c=parsed.path.lstrip('/')
-                      if c and c not in seen: queue.append(c)
-            except Exception as e: print('MISS',rel,e)
-          while queue: fetch(queue.pop(0))
-          PY
-      - name: Commit source snapshot
-        run: |
-          git config user.name "OpenAI Build Bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add site
-          git commit -m "Sync Humanevo source snapshot" || true
-          git push
+      - run: echo "Manual source synchronization only"
