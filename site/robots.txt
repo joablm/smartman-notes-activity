@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f403d">
+  <meta name="description" content="Portal de acesso da Humanevo - Psicologia e Desenvolvimento Humano.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://vdxzeltdybuitiudxbvg.supabase.co; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+  <title>Humanevo | Portal de Acesso</title>
+  
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./login.css?v=3.10.9">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=3.10.9">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=3.10.9">
+<link rel="apple-touch-icon" href="assets/favicon-180.png?v=3.10.9">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div class="login-page">
+
+    <main class="login-main">
+      <section class="login-shell">
+        <article class="welcome-panel">
+          <div class="login-hologram" aria-hidden="true"></div>
+          <span class="eyebrow">Bem-vindo à Humanevo</span>
+          <h1>Cuidado humano com uma experiência <span>simples e segura.</span></h1>
+          <p class="welcome-lead">Acesse seu ambiente profissional ou de paciente. Após a autenticação, a plataforma reconhece automaticamente seu perfil e direciona você para os recursos corretos.</p>
+
+          <div class="access-features">
+            <div class="feature">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4.5 6.2v5.2c0 4.6 3.1 8.2 7.5 9.6 4.4-1.4 7.5-5 7.5-9.6V6.2L12 3Z"/><path d="M9.5 12.2 11.2 14l3.6-4"/></svg>
+              <strong>Perfil automático</strong><small>Administrador, psicólogo, acolhimento ou paciente.</small>
+            </div>
+            <div class="feature">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg>
+              <strong>Jornada organizada</strong><small>Pacientes, agenda, avaliações e formulários em um só lugar.</small>
+            </div>
+            <div class="feature">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M9 18h6"/></svg>
+              <strong>Acesso móvel</strong><small>Use o QR Code para abrir a plataforma no celular.</small>
+            </div>
+          </div>
+
+          <div class="mobile-card">
+            <div class="qr-mini"><img src="./assets/qr-acesso-mobile.png" alt="QR Code para acessar a Humanevo pelo celular"></div>
+            <div><strong>Acesse pelo dispositivo móvel</strong><p>Leia o QR Code com a câmera do celular e entre com o mesmo e-mail e senha.</p></div>
+          </div>
+        </article>
+
+        <article class="auth-panel">
+          <div class="auth-card">
+            <div class="auth-heading">
+              <div class="auth-global-brand"><img id="global-brand-logo" src="./assets/logo-humanevo.svg" alt="Logo Humanevo"></div>
+              <span>Portal unificado</span>
+              <h2>Entrar na plataforma</h2>
+              <p>Informe seus dados de acesso. Seu perfil será identificado automaticamente.</p>
+            </div>
+
+            <div id="auth-message" class="auth-message" role="alert"></div>
+
+            <form id="login-form" class="login-form" autocomplete="on">
+              <div class="field">
+                <label for="email">E-mail</label>
+                <div class="field-wrap">
+                  <input id="email" name="email" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
+                  <span class="field-icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                  </span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="password">Senha</label>
+                <div class="field-wrap">
+                  <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" minlength="6" required>
+                  <button id="password-toggle" class="password-toggle" type="button" aria-label="Exibir senha">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="form-meta">
+                <label class="remember"><input id="remember-email" type="checkbox"> Lembrar meu e-mail</label>
+                <button class="help-link" type="button" data-action="patient-signup">Primeiro acesso do paciente</button>
+              </div>
+              <button id="login-button" class="primary-btn" type="submit">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg>
+                <span>Entrar com e-mail e senha</span>
+              </button>
+              <div class="separator">ou acesse livremente para testar</div>
+              <div class="demo-links">
+                <button class="demo-btn" type="button" data-action="demo-professional">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                  Testar painel profissional
+                </button>
+                <button class="demo-btn" type="button" data-action="demo-patient">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                  Testar portal do paciente
+                </button>
+              </div>
+            </form>
+
+            <div class="auth-note">O acesso de teste utiliza dados demonstrativos. Para dados reais, entre com um usuário cadastrado e aprovado na plataforma.</div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="login-footer"><span>Humanevo · versão <span id="app-version">3.6.7</span></span><span>Desenvolvido por: JLM</span></footer>
+  </div>
+
+  <div id="status-overlay" class="status-overlay" aria-hidden="true">
+    <section class="status-card" role="dialog" aria-modal="true" aria-labelledby="status-title">
+      <div class="status-icon">
+        <svg width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4.5 6.2v5.2c0 4.6 3.1 8.2 7.5 9.6 4.4-1.4 7.5-5 7.5-9.6V6.2L12 3Z"/><path d="M9.5 12.2 11.2 14l3.6-4"/></svg>
+      </div>
+      <h3 id="status-title">Validando seu perfil</h3>
+      <p id="status-description">Estamos preparando seu ambiente de acesso.</p>
+      <span id="status-profile" class="profile-badge" hidden></span>
+      <div id="status-loader" class="status-loader"></div>
+      <button id="status-action" class="status-action" type="button" hidden>Voltar ao acesso</button>
+
+      <form id="forced-password-form" class="forced-password-form" autocomplete="off" hidden>
+        <div class="field">
+          <label for="forced-password">Nova senha</label>
+          <div class="field-wrap">
+            <input id="forced-password" name="forced-password" type="password" autocomplete="new-password" placeholder="Crie uma nova senha" minlength="8" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="forced-password-confirm">Confirmar nova senha</label>
+          <div class="field-wrap">
+            <input id="forced-password-confirm" name="forced-password-confirm" type="password" autocomplete="new-password" placeholder="Repita a nova senha" minlength="8" required>
+          </div>
+        </div>
+        <small>A nova senha deve ter pelo menos 8 caracteres e será usada nos próximos acessos.</small>
+        <button id="forced-password-button" class="primary-btn" type="submit"><span>Salvar nova senha</span></button>
+      </form>
+    </section>
+  </div>
+
+  <script src="./config.js?v=3.10.9"></script>
+  <script src="./cloud.js?v=3.10.9"></script>
+  <script src="./login.js?v=3.10.9" defer></script>
+<!-- Cloudflare Pages Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "2c0a4800463d458b840c3541bd11fb5f"}'></script><!-- Cloudflare Pages Analytics --></body>
+</html>
