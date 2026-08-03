@@ -1,0 +1,44 @@
+name: Package Humanevo V4.1.0
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  package:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.title, 'Package Humanevo')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript
+        run: |
+          node --check site/app.js
+          node --check site/cloud.js
+          node --check site/care-network.js
+          node --check site/sw.js
+      - name: Validate required files
+        run: |
+          test -f site/painel.html
+          test -f site/care-network.js
+          test -f site/care-network.css
+          test -f site/HUMANEVO_V4_1_0_REDE_CUIDADO.sql
+          grep -q 'care-network.js?v=4.1.0' site/painel.html
+          grep -q "humanevo-premium-studio-v4-1-0" site/sw.js
+      - name: Create deployment ZIP
+        run: |
+          cd site
+          zip -r ../Humanevo_Premium_Studio_V4_1_0_REDE_CUIDADO_ESCOLA.zip . -x '*.DS_Store' -x '__MACOSX/*'
+          cd ..
+          sha256sum Humanevo_Premium_Studio_V4_1_0_REDE_CUIDADO_ESCOLA.zip > SHA256_V4_1_0.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Humanevo-V4.1.0
+          path: |
+            Humanevo_Premium_Studio_V4_1_0_REDE_CUIDADO_ESCOLA.zip
+            SHA256_V4_1_0.txt
+          retention-days: 30
