@@ -1,0 +1,42 @@
+name: Inspect Humanevo Source
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.title, 'Inspect Humanevo Source')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract source contexts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('site/app.js')
+          s=p.read_text(encoding='utf-8')
+          terms=['function renderPatientForm','save-patient','data-action="save-patient"','function modalShell','open-patient-form']
+          out=[]
+          for term in terms:
+            start=0
+            while True:
+              i=s.find(term,start)
+              if i<0: break
+              a=max(0,i-2500); b=min(len(s),i+8000)
+              out.append(f'\n\n===== {term} @ {i} =====\n'+s[a:b])
+              start=i+len(term)
+          Path('diagnostics').mkdir(exist_ok=True)
+          Path('diagnostics/app-context.txt').write_text(''.join(out),encoding='utf-8')
+          PY
+      - name: Commit contexts
+        run: |
+          git config user.name "OpenAI Build Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add diagnostics/app-context.txt
+          git commit -m "Inspect Humanevo patient form source" || true
+          git push
